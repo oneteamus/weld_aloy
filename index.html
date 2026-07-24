@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MRR Ring Forging — Quote Calculator</title>
+  <meta name="description" content="Professional ring forging quoting dashboard for MRR Metal Ring and Rollforging.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#080c14;--bg2:#0d1220;--card:#111827;--card2:#161f30;
+      --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+      --amber:#f59e0b;--amber2:#fbbf24;--blue:#3b82f6;--blue2:#60a5fa;
+      --green:#10b981;--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;
+      --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+      --mono:'JetBrains Mono',monospace;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    .header{background:linear-gradient(135deg,#0d1220,#111827,#0d1220);border-bottom:1px solid var(--border2);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;backdrop-filter:blur(16px)}
+    .header-left{display:flex;align-items:center;gap:1rem}
+    .logo-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--amber),var(--orange));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:#000;box-shadow:0 4px 20px rgba(245,158,11,0.35)}
+    .header-title{font-size:1rem;font-weight:700;letter-spacing:-0.01em}
+    .header-sub{font-size:0.7rem;color:var(--text3)}
+    .header-right{display:flex;align-items:center;gap:1rem}
+    .badge{font-size:0.65rem;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.25);letter-spacing:.05em;text-transform:uppercase}
+    .date-chip{font-size:0.7rem;color:var(--text3);font-family:var(--mono)}
+    .main-layout{display:grid;grid-template-columns:420px 1fr;min-height:calc(100vh - 64px)}
+    .input-panel{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+    .section-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .section-header{display:flex;align-items:center;gap:.6rem;padding:.75rem 1rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+    .section-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.75rem}
+    .section-header h3{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)}
+    .section-body{padding:1rem;display:flex;flex-direction:column;gap:.75rem}
+    .field{display:flex;flex-direction:column;gap:.3rem}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+    .field-row.three{grid-template-columns:1fr 1fr 1fr}
+    label{font-size:.68rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+    input[type="number"],input[type="text"],select{background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.85rem;padding:.5rem .75rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;-webkit-appearance:none;appearance:none}
+    input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+    select option{background:#1a2233}
+    .unit-toggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--border2);width:fit-content}
+    .unit-btn{padding:.4rem 1rem;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .2s}
+    .unit-btn.active{background:var(--amber);color:#000}
+    .calc-btn{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--amber),var(--orange));border:none;border-radius:10px;color:#000;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:.02em;transition:all .2s;box-shadow:0 4px 20px rgba(245,158,11,.3)}
+    .calc-btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(245,158,11,.45)}
+    .results-panel{overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+    .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.3rem;position:relative;overflow:hidden;transition:transform .2s}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+    .kpi-card.amber::before{background:linear-gradient(90deg,var(--amber),var(--orange))}
+    .kpi-card.blue::before{background:linear-gradient(90deg,var(--blue),var(--purple))}
+    .kpi-card.green::before{background:linear-gradient(90deg,var(--green),var(--blue))}
+    .kpi-card.red::before{background:linear-gradient(90deg,var(--red),var(--orange))}
+    .kpi-label{font-size:.65rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+    .kpi-value{font-size:1.5rem;font-weight:800;font-family:var(--mono);color:var(--text);letter-spacing:-.02em}
+    .kpi-sub{font-size:.68rem;color:var(--text3)}
+    .tab-bar{display:flex;gap:.25rem;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.35rem;overflow-x:auto}
+    .tab-btn{padding:.5rem 1rem;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif}
+    .tab-btn.active{background:rgba(245,158,11,.15);color:var(--amber);box-shadow:0 0 0 1px rgba(245,158,11,.25)}
+    .tab-content{display:none}
+    .tab-content.active{display:flex;flex-direction:column;gap:1.25rem}
+    .results-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .results-grid.three{grid-template-columns:1fr 1fr 1fr}
+    .result-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .result-card-header{padding:.75rem 1rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);display:flex;align-items:center;justify-content:space-between}
+    .result-card-body{padding:1rem}
+    .ring-container{display:flex;align-items:center;justify-content:center;padding:1.5rem;min-height:240px}
+    .ring-svg{filter:drop-shadow(0 8px 32px rgba(245,158,11,.2))}
+    .dim-table{width:100%;border-collapse:collapse}
+    .dim-table th{font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:.4rem .75rem;text-align:left;border-bottom:1px solid var(--border)}
+    .dim-table td{padding:.5rem .75rem;font-size:.8rem;font-family:var(--mono);border-bottom:1px solid rgba(255,255,255,.03)}
+    .dim-table tr:last-child td{border-bottom:none}
+    .dim-table td:first-child{color:var(--text2);font-family:'Inter',sans-serif;font-size:.75rem;font-weight:500}
+    .dim-table td.val{color:var(--amber2);font-weight:600}
+    .dim-table td.stock{color:var(--blue2)}
+    .dim-table td.nominal{color:var(--text)}
+    .cost-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .cost-item:last-child{border-bottom:none}
+    .cost-item-left{display:flex;align-items:center;gap:.6rem}
+    .cost-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .cost-name{font-size:.8rem;color:var(--text2)}
+    .cost-amount{font-family:var(--mono);font-size:.88rem;font-weight:600;color:var(--text)}
+    .cost-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;width:120px;margin-top:.2rem}
+    .cost-bar-fill{height:100%;border-radius:2px;transition:width .6s ease}
+    .cost-total-row{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center}
+    .cost-total-label{font-size:.75rem;font-weight:600;color:var(--text2)}
+    .cost-total-value{font-family:var(--mono);font-size:1.1rem;font-weight:800;color:var(--amber)}
+    .markup-table{width:100%;border-collapse:collapse;font-size:.78rem}
+    .markup-table th{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:.5rem .75rem;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap}
+    .markup-table th:first-child{text-align:left}
+    .markup-table td{padding:.45rem .75rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono)}
+    .markup-table td:first-child{text-align:left;font-family:'Inter',sans-serif;font-size:.75rem;color:var(--text3)}
+    .markup-table tr:hover td{background:rgba(255,255,255,.03)}
+    .highlight-row td{background:rgba(245,158,11,.08)!important}
+    .highlight-row td:first-child{color:var(--amber)!important;font-weight:600!important}
+    .price-col{color:var(--amber2);font-weight:600}
+    .gp-col{color:var(--green)}
+    .flag-card{border-radius:10px;padding:.75rem 1rem;display:flex;align-items:flex-start;gap:.75rem;border:1px solid;margin-bottom:.6rem}
+    .flag-card.warn{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.2)}
+    .flag-card.error{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.2)}
+    .flag-card.ok{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.2)}
+    .flag-card.info{background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.2)}
+    .flag-icon{font-size:1rem;margin-top:1px;flex-shrink:0}
+    .flag-title{font-weight:600;font-size:.78rem;margin-bottom:.15rem}
+    .flag-desc{font-size:.75rem;color:var(--text2);line-height:1.5}
+    .no-flags{text-align:center;padding:2rem;color:var(--text3);font-size:.82rem}
+    .chart-wrap{position:relative;padding:1rem;height:240px;display:flex;align-items:center;justify-content:center}
+    .ring-type-badge{display:inline-flex;align-items:center;gap:.4rem;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+    .ring-type-badge.sleeve{background:rgba(59,130,246,.15);color:var(--blue2);border:1px solid rgba(59,130,246,.25)}
+    .ring-type-badge.square{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+    .ring-type-badge.washer{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+    .inquiry-box{font-size:.82rem;line-height:1.8}
+    .inquiry-box h4{font-size:.9rem;font-weight:700;margin-bottom:1rem;color:var(--amber)}
+    .inquiry-field{display:grid;grid-template-columns:170px 1fr;margin-bottom:.3rem}
+    .inquiry-key{color:var(--text3);font-weight:500}
+    .inquiry-val{color:var(--text);font-family:var(--mono)}
+    .ref-table{width:100%;border-collapse:collapse;font-size:.75rem}
+    .ref-table th{padding:.4rem .65rem;text-align:left;font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);border-bottom:1px solid var(--border2)}
+    .ref-table td{padding:.4rem .65rem;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);color:var(--text2)}
+    .ref-table td:first-child{color:var(--text);font-family:'Inter',sans-serif}
+    .warning-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.6rem 1rem;font-size:.75rem;color:var(--amber);display:none;align-items:center;gap:.5rem}
+    .warning-banner.show{display:flex}
+    .select-wrap{position:relative}
+    .select-wrap::after{content:'▾';position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:.75rem}
+    select{padding-right:2rem}
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+    @media(max-width:1100px){.main-layout{grid-template-columns:1fr}.input-panel{border-right:none;border-bottom:1px solid var(--border)}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+    /* Print button */
+    .print-btn{display:flex;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.1);color:var(--amber);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+    .print-btn:hover{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.55)}
+    /* ── PRINT STYLES ── */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #fff !important; color: #111 !important; font-family: 'Inter', Arial, sans-serif; font-size: 10pt; }
+      .header, .main-layout { display: none !important; }
+      #printPage { display: block !important; }
+      #printPage { page-break-inside: avoid; }
+      .pp-section { break-inside: avoid; }
+    }
+    /* Print page (hidden on screen) */
+    #printPage { display: none; padding: 0; background: #fff; color: #111; }
+    /* When previewing print page in browser (debug) — remove display:none above */
+    .pp-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #f59e0b; padding-bottom: 12px; margin-bottom: 18px; }
+    .pp-logo { font-size: 22pt; font-weight: 800; letter-spacing: -0.02em; color: #000; }
+    .pp-logo span { color: #f59e0b; }
+    .pp-meta { text-align: right; font-size: 8pt; color: #555; line-height: 1.7; }
+    .pp-meta strong { font-size: 10pt; color: #111; display: block; }
+    .pp-title { font-size: 11pt; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-left: 3px solid #f59e0b; padding-left: 8px; }
+    .pp-section { margin-bottom: 16px; }
+    .pp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .pp-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .pp-box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; }
+    .pp-box-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px; }
+    .pp-box-val { font-size: 14pt; font-weight: 800; color: #111; font-family: 'JetBrains Mono', monospace; }
+    .pp-box-sub { font-size: 7.5pt; color: #64748b; margin-top: 2px; }
+    .pp-kpi-highlight { border-color: #f59e0b; background: #fffbeb; }
+    .pp-kpi-highlight .pp-box-val { color: #d97706; }
+    .pp-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    .pp-table th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 8px; text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; }
+    .pp-table th.r { text-align: right; }
+    .pp-table td { border: 1px solid #e2e8f0; padding: 5px 8px; }
+    .pp-table td.r { text-align: right; font-family: monospace; }
+    .pp-table tr.hl td { background: #fffbeb; font-weight: 700; }
+    .pp-table tr.hl td.r { color: #d97706; }
+    .pp-flags { display: flex; flex-direction: column; gap: 5px; }
+    .pp-flag { padding: 5px 10px; border-radius: 4px; border-left: 3px solid; font-size: 8pt; }
+    .pp-flag.warn { background: #fffbeb; border-color: #f59e0b; }
+    .pp-flag.error { background: #fff1f2; border-color: #ef4444; }
+    .pp-flag.ok { background: #f0fdf4; border-color: #10b981; }
+    .pp-flag.info { background: #eff6ff; border-color: #3b82f6; }
+    .pp-flag strong { display: block; font-size: 7.5pt; }
+    .pp-divider { border: none; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+    .pp-footer { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 7.5pt; color: #94a3b8; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">MRR</div>
+    <div>
+      <div class="header-title">Ring Forging Quote Calculator</div>
+      <div class="header-sub">Metal Ring &amp; Rollforging — Internal Quoting Tool</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge">Internal Use Only</span>
+    <span class="date-chip" id="headerDate"></span>
+    <button class="print-btn" onclick="printQuote()">🖨️ Print Quote</button>
+  </div>
+</header>
+
+<div class="main-layout">
+<aside class="input-panel">
+  <div class="section-card">
+    <div class="section-header"><div class="section-icon" style="background:rgba(59,130,246,.15)">📋</div><h3>Quote Info</h3></div>
+    <div class="section-body">
+      <div class="field-row">
+        <div class="field"><label>Quote #</label><input type="text" id="quoteNum" placeholder="Q-2024-001"></div>
+        <div class="field"><label>Item</label><input type="text" id="itemNum" placeholder="Item 1"></div>
+      </div>
+      <div class="field"><label>Customer</label><input type="text" id="customer" placeholder="Customer name"></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(245,158,11,.15)">⭕</div><h3>Ring Dimensions</h3>
+      <div style="margin-left:auto">
+        <div class="unit-toggle">
+          <button class="unit-btn active" id="unitIn" onclick="setUnit('in')">in</button>
+          <button class="unit-btn" id="unitMm" onclick="setUnit('mm')">mm</button>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="field-row three">
+        <div class="field"><label>OD</label><input type="number" id="od" value="33" step="0.001" min="0" oninput="calculate()"></div>
+        <div class="field"><label>ID</label><input type="number" id="id_in" value="29" step="0.001" min="0" oninput="calculate()"></div>
+        <div class="field"><label>THK</label><input type="number" id="thk" value="3" step="0.001" min="0" oninput="calculate()"></div>
+      </div>
+      <div class="field"><label>Quantity (pcs)</label><input type="number" id="qty" value="1" step="1" min="1" oninput="calculate()"></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><div class="section-icon" style="background:rgba(139,92,246,.15)">🔩</div><h3>Material</h3></div>
+    <div class="section-body">
+      <div class="field"><label>Material Grade (MPS Code)</label>
+        <div class="select-wrap"><select id="mpsCode" onchange="onMaterialChange()"></select></div>
+      </div>
+      <div class="field"><label>Stock Type</label>
+        <div class="select-wrap">
+          <select id="stockType" onchange="calculate()">
+            <option value="1">1 — INGOT (EQS)</option>
+            <option value="2" selected>2 — BAR</option>
+            <option value="3">3 — BILLET</option>
+          </select>
+        </div>
+      </div>
+      <div class="warning-banner" id="ingotWarn">⚠ Ingot selected — verify material availability</div>
+      <div class="field"><label>Material Price Override ($/lb) — 0 = use DB</label>
+        <input type="number" id="matPriceOverride" value="0" step="0.001" min="0" oninput="calculate()">
+      </div>
+      <div style="font-size:.7rem;color:var(--text3);display:flex;gap:.75rem;flex-wrap:wrap">
+        <span>DB Price: <span id="dbPrice" style="color:var(--amber);font-family:var(--mono)">—</span></span>
+        <span>Density: <span id="densityDisp" style="color:var(--blue2);font-family:var(--mono)">0.283</span> lb/in³</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><div class="section-icon" style="background:rgba(239,68,68,.15)">🔥</div><h3>Heat Treatment</h3></div>
+    <div class="section-body">
+      <div class="field"><label>Treatment Type</label>
+        <div class="select-wrap">
+          <select id="htCode" onchange="onHtChange()">
+            <option value="0">0 — Untreated ($0.00/lb)</option>
+            <option value="1" selected>1 — Normalize ($0.04/lb)</option>
+            <option value="2">2 — Normalize &amp; Temper ($0.08/lb)</option>
+            <option value="3">3 — Normalize, Quench &amp; Temper ($0.12/lb)</option>
+            <option value="4">4 — Anneal ($0.12/lb)</option>
+            <option value="5">5 — Spheroidize Anneal ($0.08/lb)</option>
+            <option value="6">6 — Solution Anneal ($0.12/lb)</option>
+            <option value="7">7 — Solution Treat (17-4 PH) — Manual cost</option>
+            <option value="8">8 — Sol Treat + Age (17-4 PH) — Manual cost</option>
+            <option value="9">9 — Sol Treat + Dbl Age (17-4 PH) — Manual cost</option>
+          </select>
+        </div>
+      </div>
+      <div id="htManualNote" style="display:none;font-size:.7rem;color:var(--amber)">⚠ Manual HT cost entry required for this type</div>
+      <div class="field" id="htManualField" style="display:none">
+        <label>Manual HT Cost ($/pc)</label>
+        <input type="number" id="htManualCost" value="0" step="0.01" oninput="calculate()">
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Min BHN</label><input type="number" id="minBHN" value="0" step="1" oninput="calculate()"></div>
+        <div class="field"><label>Max BHN</label><input type="number" id="maxBHN" value="0" step="1" oninput="calculate()"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><div class="section-icon" style="background:rgba(16,185,129,.15)">⚙️</div><h3>Options &amp; Outsourcing</h3></div>
+    <div class="section-body">
+      <div class="field"><label>Freight Destination</label>
+        <div class="select-wrap">
+          <select id="freightId" onchange="calculate()">
+            <option value="0">None / Customer Pickup — $0</option>
+            <option value="1">Modern (Pickup) — $10</option>
+            <option value="2">EB&amp;A (Caflisch Round Trip) — $95</option>
+            <option value="3">VIP-Corry (Caflisch Round Trip) — $127</option>
+            <option value="4" selected>VIP-Dupont (Caflisch Round Trip) — $190</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Machining?</label>
+          <div class="select-wrap"><select id="machining" onchange="calculate()"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+        <div class="field"><label>Drill Required?</label>
+          <div class="select-wrap"><select id="drill" onchange="calculate()"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+      </div>
+      <div class="field"><label>Extra Heats Required</label><input type="number" id="extraHeats" value="0" step="1" min="0" oninput="calculate()"></div>
+      <div class="field"><label>Additional Costs $/pc (testing, NDT, etc.)</label><input type="number" id="additionalCosts" value="0" step="0.01" oninput="calculate()"></div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate(true)">⚡ Calculate Quote</button>
+</aside>
+
+<main class="results-panel">
+  <div class="kpi-row">
+    <div class="kpi-card amber"><div class="kpi-label">Total Cost / pc</div><div class="kpi-value" id="kpiTotalCost">—</div><div class="kpi-sub">before markup</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Stock Weight</div><div class="kpi-value" id="kpiWeight">—</div><div class="kpi-sub">lbs per piece</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Price @ 1.40×</div><div class="kpi-value" id="kpiPrice14">—</div><div class="kpi-sub">GP/hr: <span id="kpiGP14">—</span></div></div>
+    <div class="kpi-card red"><div class="kpi-label">Eng. Flags</div><div class="kpi-value" id="kpiFlags">0</div><div class="kpi-sub">warnings active</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('geometry',this)" id="tb-geometry">📐 Geometry</button>
+    <button class="tab-btn" onclick="switchTab('costs',this)" id="tb-costs">💰 Cost Breakdown</button>
+    <button class="tab-btn" onclick="switchTab('markup',this)" id="tb-markup">📊 Markup Table</button>
+    <button class="tab-btn" onclick="switchTab('flags',this)" id="tb-flags">🚩 Eng. Flags</button>
+    <button class="tab-btn" onclick="switchTab('inquiry',this)" id="tb-inquiry">📄 Mach. Inquiry</button>
+    <button class="tab-btn" onclick="switchTab('reference',this)" id="tb-reference">📚 Reference</button>
+  </div>
+
+  <!-- GEOMETRY TAB -->
+  <div id="tab-geometry" class="tab-content active">
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-card-header">Ring Cross-Section <span id="ringTypeBadge"></span></div>
+        <div class="ring-container">
+          <svg id="ringSvg" class="ring-svg" width="220" height="220" viewBox="0 0 220 220">
+            <defs>
+              <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#c0c8d8"/><stop offset="70%" stop-color="#7a8499"/><stop offset="100%" stop-color="#4a5568"/></radialGradient>
+              <radialGradient id="holeGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#1a2035"/><stop offset="100%" stop-color="#080c14"/></radialGradient>
+            </defs>
+            <circle id="svgOuter" cx="110" cy="110" r="90" fill="url(#ringGrad)" stroke="rgba(245,158,11,0.5)" stroke-width="1.5"/>
+            <circle id="svgInner" cx="110" cy="110" r="55" fill="url(#holeGrad)" stroke="rgba(96,165,250,0.4)" stroke-width="1"/>
+            <line x1="110" y1="20" x2="200" y2="20" stroke="rgba(245,158,11,0.6)" stroke-width="1" stroke-dasharray="4,3"/>
+            <text id="svgODLabel" x="155" y="15" fill="#f59e0b" font-size="10" font-family="JetBrains Mono" text-anchor="middle">OD</text>
+            <line x1="110" y1="110" x2="165" y2="75" stroke="rgba(96,165,250,0.6)" stroke-width="1" stroke-dasharray="3,2"/>
+            <text id="svgIDLabel" x="172" y="72" fill="#60a5fa" font-size="10" font-family="JetBrains Mono">ID</text>
+            <text id="svgTHKLabel" x="110" y="208" fill="#94a3b8" font-size="9" font-family="JetBrains Mono" text-anchor="middle">Ring cross-section (not to scale)</text>
+          </svg>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-header">Dimensions &amp; Allowances</div>
+        <div class="result-card-body">
+          <table class="dim-table">
+            <thead><tr><th>Dim</th><th>Nominal (in)</th><th>Stock (in)</th><th>Tolerance</th></tr></thead>
+            <tbody id="dimTableBody"><tr><td colspan="4" style="color:var(--text3);text-align:center">Enter dimensions above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="results-grid three">
+      <div class="result-card"><div class="result-card-header">Weight</div><div class="result-card-body">
+        <table class="dim-table"><tbody>
+          <tr><td>Nominal Ring</td><td class="val" id="nomWeight">—</td></tr>
+          <tr><td>Stock Ring</td><td class="val" id="stockWeightDisp">—</td></tr>
+          <tr><td>Scale Factor</td><td class="val" id="scaleFactor">—</td></tr>
+          <tr><td>Required Wt</td><td class="val" id="reqWeight">—</td></tr>
+          <tr><td>Saw Kerf Wt</td><td class="val" id="sawKerfWeight">—</td></tr>
+          <tr><td>THK/OD Ratio</td><td class="val" id="thkodRatio">—</td></tr>
+        </tbody></table>
+      </div></div>
+      <div class="result-card"><div class="result-card-header">Blank &amp; Bar</div><div class="result-card-body">
+        <table class="dim-table"><tbody>
+          <tr><td>Mandrel Size</td><td class="val" id="mandrelSize">—</td></tr>
+          <tr><td>Blank Height</td><td class="val" id="blankHeight">—</td></tr>
+          <tr><td>Blank OD (est)</td><td class="val" id="blankOD">—</td></tr>
+          <tr><td>Min Bar Dia</td><td class="val" id="minBarDia">—</td></tr>
+          <tr><td>Max Bar Dia</td><td class="val" id="maxBarDia">—</td></tr>
+          <tr><td>Bar Cut Length</td><td class="val" id="barCutLen">—</td></tr>
+        </tbody></table>
+      </div></div>
+      <div class="result-card"><div class="result-card-header">Mill Info</div><div class="result-card-body">
+        <table class="dim-table"><tbody>
+          <tr><td>Wall</td><td class="val" id="wallThk">—</td></tr>
+          <tr><td>Wall/THK Ratio</td><td class="val" id="wallThkRatio">—</td></tr>
+          <tr><td>Fill Factor</td><td class="val" id="fillFactor">—</td></tr>
+          <tr><td>Ring Type</td><td class="val" id="ringTypeCell">—</td></tr>
+          <tr><td>Total Req. Lbs</td><td class="val" id="totalReqLbs">—</td></tr>
+          <tr><td>Rolling Time</td><td class="val" id="rollingTime">—</td></tr>
+        </tbody></table>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- COSTS TAB -->
+  <div id="tab-costs" class="tab-content">
+    <div class="results-grid">
+      <div class="result-card"><div class="result-card-header">Cost Breakdown / piece</div>
+        <div class="result-card-body" id="costBreakdownList"><div style="color:var(--text3);text-align:center;padding:1rem">Calculate to see breakdown</div></div>
+      </div>
+      <div class="result-card"><div class="result-card-header">Cost Distribution</div>
+        <div class="chart-wrap"><canvas id="costPieChart"></canvas></div>
+      </div>
+    </div>
+    <div class="result-card"><div class="result-card-header">Rate Reference</div><div class="result-card-body">
+      <div class="results-grid three">
+        <div>
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Rolling Cost</div>
+          <table class="ref-table"><tr><th>Qty</th><th>$/pc</th><th>Hrs/pc</th></tr><tr><td>1–4 pcs</td><td>$56.70</td><td>0.09</td></tr><tr><td>5+ pcs</td><td>$44.10</td><td>0.07</td></tr></table>
+        </div>
+        <div>
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Heat Treatment</div>
+          <table class="ref-table"><tr><th>Code</th><th>Name</th><th>$/lb</th></tr>
+            <tr><td>0</td><td>Untreated</td><td>$0.00</td></tr>
+            <tr><td>1</td><td>Normalize</td><td>$0.04</td></tr>
+            <tr><td>2</td><td>N &amp; T</td><td>$0.08</td></tr>
+            <tr><td>3</td><td>NQT</td><td>$0.12</td></tr>
+            <tr><td>4</td><td>Anneal</td><td>$0.12</td></tr>
+            <tr><td>5</td><td>Sph. Ann.</td><td>$0.08</td></tr>
+            <tr><td>6</td><td>Sol. Ann.</td><td>$0.12</td></tr>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Freight</div>
+          <table class="ref-table"><tr><th>Destination</th><th>Cost</th></tr>
+            <tr><td>None</td><td>$0</td></tr>
+            <tr><td>Modern</td><td>$10</td></tr>
+            <tr><td>EB&amp;A</td><td>$95</td></tr>
+            <tr><td>VIP-Corry</td><td>$127</td></tr>
+            <tr><td>VIP-Dupont</td><td>$190</td></tr>
+          </table>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- MARKUP TAB -->
+  <div id="tab-markup" class="tab-content">
+    <div class="result-card">
+      <div class="result-card-header">Price &amp; Gross Profit/Hour by Markup <span style="font-size:.65rem;color:var(--text3);font-weight:400">Mill=$630/hr | Saw=$29/hr | Overhead ×1.03</span></div>
+      <div class="result-card-body" style="overflow-x:auto">
+        <table class="markup-table" id="markupTable">
+          <thead><tr><th>Markup</th><th>Price/pc</th><th>GP/hr</th><th>Margin</th><th>Markup</th><th>Price/pc</th><th>GP/hr</th><th>Margin</th></tr></thead>
+          <tbody id="markupTableBody"><tr><td colspan="8" style="text-align:center;color:var(--text3);padding:2rem">Calculate to generate table</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLAGS TAB -->
+  <div id="tab-flags" class="tab-content">
+    <div class="result-card">
+      <div class="result-card-header">Engineering Validation Checks</div>
+      <div class="result-card-body" id="flagsList"><div class="no-flags">Enter dimensions and calculate to run checks</div></div>
+    </div>
+  </div>
+
+  <!-- INQUIRY TAB -->
+  <div id="tab-inquiry" class="tab-content">
+    <div class="result-card">
+      <div class="result-card-header">Machining Inquiry / RFQ
+        <button onclick="window.print()" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:.68rem;cursor:pointer;font-family:Inter,sans-serif">🖨 Print</button>
+      </div>
+      <div class="result-card-body">
+        <div class="inquiry-box">
+          <h4>INQUIRY / REQUEST FOR QUOTATION</h4>
+          <div class="results-grid">
+            <div>
+              <div class="inquiry-field"><span class="inquiry-key">To:</span><span class="inquiry-val">VIP MACHINING</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">From:</span><span class="inquiry-val">MRR</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">Date:</span><span class="inquiry-val" id="inqDate"></span></div>
+              <div class="inquiry-field"><span class="inquiry-key">Reference #:</span><span class="inquiry-val" id="inqRef">—</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">Customer:</span><span class="inquiry-val" id="inqCustomer">—</span></div>
+            </div>
+            <div>
+              <div class="inquiry-field"><span class="inquiry-key">Quantity:</span><span class="inquiry-val" id="inqQty">—</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">Material:</span><span class="inquiry-val" id="inqMat">—</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">Heat Treat:</span><span class="inquiry-val" id="inqHT">—</span></div>
+              <div class="inquiry-field"><span class="inquiry-key">BHN Range:</span><span class="inquiry-val" id="inqBHN">—</span></div>
+            </div>
+          </div>
+          <hr style="border-color:var(--border);margin:1rem 0">
+          <div style="font-size:.75rem;color:var(--text3);font-weight:600;margin-bottom:.5rem">MRR PROVIDES (as-forged):</div>
+          <table class="dim-table" style="margin-bottom:1rem">
+            <thead><tr><th>Dim</th><th>Size (in)</th><th>Tolerance</th></tr></thead>
+            <tbody>
+              <tr><td>OD</td><td id="inqStockOD">—</td><td id="inqTol">—</td></tr>
+              <tr><td>ID</td><td id="inqStockID">—</td><td id="inqTol2">—</td></tr>
+              <tr><td>THK</td><td id="inqStockTHK">—</td><td id="inqTol3">—</td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:.75rem;color:var(--text3);font-weight:600;margin-bottom:.5rem">MACHINE TO SIZE:</div>
+          <table class="dim-table" style="margin-bottom:1rem">
+            <thead><tr><th>Dim</th><th>Nominal (in)</th><th>Tol</th></tr></thead>
+            <tbody>
+              <tr><td>OD</td><td id="inqNomOD">—</td><td>—</td></tr>
+              <tr><td>ID</td><td id="inqNomID">—</td><td>—</td></tr>
+              <tr><td>THK</td><td id="inqNomTHK">—</td><td>—</td></tr>
+            </tbody>
+          </table>
+          <div class="inquiry-field"><span class="inquiry-key">Surface Finish:</span><span class="inquiry-val">500 RMS</span></div>
+          <div class="inquiry-field"><span class="inquiry-key">Unmachined Wt:</span><span class="inquiry-val" id="inqUnmachWt">—</span></div>
+          <div class="inquiry-field"><span class="inquiry-key">Est. Machined Wt:</span><span class="inquiry-val" id="inqMachWt">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFERENCE TAB -->
+  <div id="tab-reference" class="tab-content">
+    <div class="results-grid">
+      <div class="result-card"><div class="result-card-header">Allowance Tables</div><div class="result-card-body">
+        <div style="font-size:.65rem;text-transform:uppercase;color:var(--amber);margin-bottom:.5rem;letter-spacing:.07em">Standard (THK/OD &lt; 0.30)</div>
+        <table class="ref-table" style="margin-bottom:1rem">
+          <tr><th>OD ≤</th><th>OD</th><th>ID</th><th>THK</th><th>Tolerance</th></tr>
+          <tr><td>20"</td><td>0.438"</td><td>0.438"</td><td>0.438"</td><td>±0.250"</td></tr>
+          <tr><td>40"</td><td>0.500"</td><td>0.500"</td><td>0.438"</td><td>±0.250"</td></tr>
+          <tr><td>50"</td><td>0.625"</td><td>0.625"</td><td>0.625"</td><td>±0.312"</td></tr>
+          <tr><td>70"</td><td>0.750"</td><td>0.750"</td><td>0.625"</td><td>±0.375"</td></tr>
+          <tr><td>82"+</td><td>0.750"</td><td>0.750"</td><td>0.625"</td><td>±0.375"</td></tr>
+        </table>
+        <div style="font-size:.65rem;text-transform:uppercase;color:var(--blue2);margin-bottom:.5rem;letter-spacing:.07em">Heavy Wall (THK/OD ≥ 0.30)</div>
+        <table class="ref-table">
+          <tr><th>OD ≤</th><th>OD</th><th>ID</th><th>THK</th></tr>
+          <tr><td>20"</td><td>0.562"</td><td>0.562"</td><td>0.500"</td></tr>
+          <tr><td>40"</td><td>0.625"</td><td>0.625"</td><td>0.500"</td></tr>
+          <tr><td>50"</td><td>0.750"</td><td>0.750"</td><td>0.688"</td></tr>
+          <tr><td>70"</td><td>0.875"</td><td>0.875"</td><td>0.688"</td></tr>
+          <tr><td>82"+</td><td>0.875"</td><td>0.875"</td><td>0.688"</td></tr>
+        </table>
+      </div></div>
+      <div class="result-card"><div class="result-card-header">Engineering Limits</div><div class="result-card-body">
+        <table class="ref-table">
+          <tr><th>Parameter</th><th>Limit</th><th>Action</th></tr>
+          <tr><td>Max OD</td><td>60"</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Min ID</td><td>10"</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Min THK</td><td>1.5"</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Max THK</td><td>11"</td><td>Exceeds capacity</td></tr>
+          <tr><td>Max Wt (carbon)</td><td>1,000 lbs</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Max Wt (alloy/SS)</td><td>700 lbs</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Min Weight</td><td>60 lbs</td><td>Check scale factor</td></tr>
+          <tr><td>Max THK/OD</td><td>30%</td><td>Heavy allowances</td></tr>
+          <tr><td>Max Wall/THK</td><td>4.0</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Min Fill Factor</td><td>11</td><td>Review rolling</td></tr>
+          <tr><td>Max Blank OD</td><td>24"</td><td>Review w/ Eng.</td></tr>
+          <tr><td>Max Drill Dia</td><td>8.25"</td><td>Review drill cost</td></tr>
+        </table>
+      </div></div>
+    </div>
+    <div class="result-card"><div class="result-card-header">Material Database (MPS Grades)</div>
+      <div class="result-card-body" style="max-height:400px;overflow-y:auto">
+        <table class="ref-table" id="materialRefTable">
+          <thead><tr><th>MPS</th><th>Grade Name</th><th>Billet $/lb</th><th>Bar $/lb</th><th>Ingot $/lb</th><th>Density</th><th>Type</th></tr></thead>
+          <tbody id="materialRefBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ===== PRINT PAGE (hidden on screen, shown on print) ===== -->
+<div id="printPage">
+  <div class="pp-header">
+    <div>
+      <div class="pp-logo">MRR <span>Ring Forging</span></div>
+      <div style="font-size:8pt;color:#555;margin-top:4px">Metal Ring &amp; Rollforging — Internal Quoting Tool</div>
+    </div>
+    <div class="pp-meta">
+      <strong id="pp-quoteNum">Quote</strong>
+      <span id="pp-customer"></span><br>
+      <span id="pp-date"></span>
+    </div>
+  </div>
+
+  <div class="pp-section">
+    <div class="pp-title">Ring Dimensions</div>
+    <div class="pp-grid-3">
+      <div class="pp-box"><div class="pp-box-label">Nominal OD</div><div class="pp-box-val" id="pp-od">—</div><div class="pp-box-sub">inches</div></div>
+      <div class="pp-box"><div class="pp-box-label">Nominal ID</div><div class="pp-box-val" id="pp-id">—</div><div class="pp-box-sub">inches</div></div>
+      <div class="pp-box"><div class="pp-box-label">Thickness</div><div class="pp-box-val" id="pp-thk">—</div><div class="pp-box-sub">inches</div></div>
+    </div>
+    <div class="pp-grid" style="margin-bottom:0">
+      <div class="pp-box"><div class="pp-box-label">Material (MPS)</div><div class="pp-box-val" style="font-size:10pt" id="pp-mat">—</div></div>
+      <div class="pp-box"><div class="pp-box-label">Heat Treatment</div><div class="pp-box-val" style="font-size:10pt" id="pp-ht">—</div></div>
+    </div>
+  </div>
+
+  <hr class="pp-divider">
+
+  <div class="pp-section">
+    <div class="pp-title">Cost Summary</div>
+    <div class="pp-grid-3" style="margin-bottom:8px">
+      <div class="pp-box pp-kpi-highlight"><div class="pp-box-label">Total Cost / pc</div><div class="pp-box-val" id="pp-cost">—</div><div class="pp-box-sub">before markup</div></div>
+      <div class="pp-box"><div class="pp-box-label">Stock Weight</div><div class="pp-box-val" id="pp-wt">—</div><div class="pp-box-sub">lbs per piece</div></div>
+      <div class="pp-box"><div class="pp-box-label">Quantity</div><div class="pp-box-val" id="pp-qty">—</div><div class="pp-box-sub">pieces</div></div>
+    </div>
+    <table class="pp-table" id="pp-costTable">
+      <thead><tr><th>Cost Item</th><th class="r">$/pc</th><th class="r">% of Total</th></tr></thead>
+      <tbody id="pp-costBody"></tbody>
+    </table>
+  </div>
+
+  <hr class="pp-divider">
+
+  <div class="pp-section">
+    <div class="pp-title">Markup &amp; Pricing Table</div>
+    <table class="pp-table">
+      <thead>
+        <tr>
+          <th>Markup</th><th class="r">Price / pc</th><th class="r">GP / hr</th><th class="r">Margin %</th>
+          <th style="border-left:2px solid #e2e8f0">Markup</th><th class="r">Price / pc</th><th class="r">GP / hr</th><th class="r">Margin %</th>
+        </tr>
+      </thead>
+      <tbody id="pp-markupBody"></tbody>
+    </table>
+  </div>
+
+  <hr class="pp-divider">
+
+  <div class="pp-section">
+    <div class="pp-title">Engineering Flags</div>
+    <div class="pp-flags" id="pp-flags"></div>
+  </div>
+
+  <div class="pp-footer">
+    <span>MRR Ring Forging — Internal Use Only — Confidential</span>
+    <span id="pp-footer-date"></span>
+  </div>
+</div>
+
+<script>
+const MPS_GRADES=[
+  {code:0,name:'Unknown',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1010,name:'1010 Carbon (Ti addition)',billet:0,bar:0.89,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1018,name:'1018 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1020,name:'1020 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1030,name:'1022 MOD',billet:0,bar:0.64,ingot:0.45,density:0.283,sawRate:171,drillCode:2},
+  {code:1060,name:'1060 High Carbon',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1065,name:'1552 (BQ Capable)',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:171,drillCode:1},
+  {code:1080,name:'1029',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1083,name:'X-60',billet:0,bar:0,ingot:0.5,density:0.283,sawRate:214,drillCode:2},
+  {code:1084,name:'1518 MOD',billet:0,bar:0,ingot:0.48,density:0.283,sawRate:214,drillCode:2},
+  {code:1085,name:'A694 Grade F65',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1120,name:'1522 MOD',billet:0,bar:0.64,ingot:0.45,density:0.283,sawRate:214,drillCode:2},
+  {code:1125,name:'1526 (HiC)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1135,name:'1541 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1140,name:'1141 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1155,name:'1155 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1249,name:'1249 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1250,name:'4130 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1251,name:'4140 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1255,name:'4142 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1261,name:'4145 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1271,name:'4150 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1315,name:'4340 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1321,name:'8620 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1322,name:'8622 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:1501,name:'A182 F51 (2205 Duplex SS)',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:3},
+  {code:1505,name:'304/304L Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:214,drillCode:3},
+  {code:1508,name:'316/316L Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:214,drillCode:3},
+  {code:1509,name:'321 Stainless',billet:0,bar:0,ingot:0,density:0.285,sawRate:214,drillCode:3},
+  {code:1520,name:'347 Stainless',billet:0,bar:0,ingot:0,density:0.285,sawRate:214,drillCode:3},
+  {code:1606,name:'410 Stainless',billet:0,bar:0,ingot:0,density:0.276,sawRate:214,drillCode:3},
+  {code:1608,name:'17-4 PH Stainless',billet:0,bar:0,ingot:0,density:0.28,sawRate:214,drillCode:3},
+  {code:1700,name:'A182 F22 (2.25Cr-1Mo)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1800,name:'A182 F91 (Mod 9Cr-1Mo)',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
+  {code:2700,name:'M-50 NiL',billet:0,bar:0,ingot:0,density:0.284,sawRate:150,drillCode:3},
+  {code:5570,name:'A-286 (AMS 5731)',billet:0,bar:0,ingot:0,density:0.286,sawRate:150,drillCode:3},
+  {code:9999,name:'Other / Specify',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2}
+];
+const HT_RATES=[0,0.04,0.08,0.12,0.12,0.08,0.12,0,0,0];
+const HT_NAMES=['Untreated','Normalize','Normalize & Temper','Normalize/Quench & Temper','Anneal','Spheroidize Anneal','Solution Anneal','Solution Treat (17-4 PH)','Sol Treat + Age (17-4 PH)','Sol Treat + Dbl Age (17-4 PH)'];
+const OD_STD=[{od:0,v:.375},{od:20,v:.438},{od:40,v:.5},{od:50,v:.625},{od:70,v:.75},{od:82,v:.75}];
+const ID_STD=[{od:0,v:.375},{od:20,v:.438},{od:40,v:.5},{od:50,v:.625},{od:70,v:.75},{od:82,v:.75}];
+const TH_STD=[{od:0,v:.375},{od:20,v:.438},{od:40,v:.438},{od:50,v:.625},{od:70,v:.625},{od:82,v:.625}];
+const OD_HVY=[{od:0,v:.5},{od:20,v:.562},{od:40,v:.625},{od:50,v:.75},{od:70,v:.875},{od:82,v:.875}];
+const ID_HVY=[{od:0,v:.5},{od:20,v:.562},{od:40,v:.625},{od:50,v:.75},{od:70,v:.875},{od:82,v:.875}];
+const TH_HVY=[{od:0,v:.438},{od:20,v:.5},{od:40,v:.5},{od:50,v:.688},{od:70,v:.688},{od:82,v:.688}];
+const TOL_T=[{od:0,t:'±0.188"'},{od:20,t:'±0.250"'},{od:40,t:'±0.250"'},{od:50,t:'±0.312"'},{od:70,t:'±0.375"'},{od:82,t:'±0.375"'}];
+const FREIGHT=[0,10,95,127,190];
+const MARKUPS=[1.10,1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50,1.55,1.60,1.65,1.70,1.75,1.80,1.85,1.90,1.95,2.00,2.05,2.10];
+
+function vlu(val,tbl){let r=tbl[0].v;for(const row of tbl){if(row.od<=val)r=row.v;else break;}return r;}
+function vlut(val){let r=TOL_T[0].t;for(const row of TOL_T){if(row.od<=val)r=row.t;else break;}return r;}
+function getMat(code){return MPS_GRADES.find(m=>m.code===code)||MPS_GRADES[0];}
+function fi(v){return typeof v==='number'?v.toFixed(3)+'"':'—';}
+function fl(v){return typeof v==='number'?v.toFixed(1)+' lbs':'—';}
+function fd(v){return typeof v==='number'?'$'+v.toFixed(2):'—';}
+function rd(v,d=3){return Math.round(v*Math.pow(10,d))/Math.pow(10,d);}
+function set(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
+let pieChart=null;
+
+function init(){
+  const now=new Date();
+  const ds=now.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  set('headerDate',ds);set('inqDate',ds);
+  const sel=document.getElementById('mpsCode');
+  MPS_GRADES.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m.code;o.textContent=m.code+' — '+m.name;
+    if(m.code===1020)o.selected=true;
+    sel.appendChild(o);
+  });
+  const tbody=document.getElementById('materialRefBody');
+  MPS_GRADES.forEach(m=>{
+    const tr=document.createElement('tr');
+    const dc=['','Carbon','Alloy','Stainless'][m.drillCode]||'—';
+    tr.innerHTML=`<td>${m.code}</td><td>${m.name}</td>
+      <td>${m.billet>0?'$'+m.billet.toFixed(2):'<span style="color:var(--text3)">N/A</span>'}</td>
+      <td>${m.bar>0?'$'+m.bar.toFixed(2):'<span style="color:var(--text3)">N/A</span>'}</td>
+      <td>${m.ingot>0?'$'+m.ingot.toFixed(2):'<span style="color:var(--text3)">N/A</span>'}</td>
+      <td>${m.density}</td><td>${dc}</td>`;
+    tbody.appendChild(tr);
+  });
+  onMaterialChange();calculate();
+}
+
+function setUnit(u){
+  document.getElementById('unitIn').classList.toggle('active',u==='in');
+  document.getElementById('unitMm').classList.toggle('active',u==='mm');
+}
+function onMaterialChange(){
+  const code=parseInt(document.getElementById('mpsCode').value);
+  const mat=getMat(code);
+  const st=parseInt(document.getElementById('stockType').value);
+  const dbP=st===1?mat.ingot:st===2?mat.bar:mat.billet;
+  set('dbPrice',dbP>0?'$'+dbP.toFixed(3)+'/lb':'Not in DB — enter override');
+  set('densityDisp',mat.density);
+  calculate();
+}
+function onHtChange(){
+  const hc=parseInt(document.getElementById('htCode').value);
+  const manual=hc>=7;
+  document.getElementById('htManualNote').style.display=manual?'block':'none';
+  document.getElementById('htManualField').style.display=manual?'block':'none';
+  calculate();
+}
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function calculate(isManualClick = false){
+  const btn = document.querySelector('.calc-btn');
+  const od=parseFloat(document.getElementById('od').value)||0;
+  const id=parseFloat(document.getElementById('id_in').value)||0;
+  const thk=parseFloat(document.getElementById('thk').value)||0;
+  const qty=parseInt(document.getElementById('qty').value)||1;
+  const mpsCode=parseInt(document.getElementById('mpsCode').value);
+  const stockType=parseInt(document.getElementById('stockType').value);
+  const htCode=parseInt(document.getElementById('htCode').value);
+  const freightId=parseInt(document.getElementById('freightId').value);
+  const matOvr=parseFloat(document.getElementById('matPriceOverride').value)||0;
+  const addCosts=parseFloat(document.getElementById('additionalCosts').value)||0;
+  const extraHeats=parseInt(document.getElementById('extraHeats').value)||0;
+  const minBHN=parseInt(document.getElementById('minBHN').value)||0;
+  const maxBHN=parseInt(document.getElementById('maxBHN').value)||0;
+  const isMach=parseInt(document.getElementById('machining').value);
+  const isDrill=parseInt(document.getElementById('drill').value);
+  const needManualHT=htCode>=7;
+  const htManual=needManualHT?(parseFloat(document.getElementById('htManualCost').value)||0):0;
+
+  document.getElementById('ingotWarn').classList.toggle('show',stockType===1);
+
+  if(!od || !id || !thk || od <= id) {
+    if(isManualClick && btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '⚠ Invalid Dimensions';
+      btn.style.background = 'var(--red)';
+      setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+    }
+    return;
+  }
+
+  if(isManualClick && btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Calculated';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'white';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 1000);
+  }
+
+  const mat=getMat(mpsCode);
+  const density=mat.density;
+  const sawRate=mat.sawRate;
+
+  // ALLOWANCES
+  const thkOD=thk/od;
+  const heavy=thkOD>=0.30;
+  const odAllow=vlu(od,heavy?OD_HVY:OD_STD);
+  const idAllow=vlu(od,heavy?ID_HVY:ID_STD);
+  const thkAllow=vlu(od,heavy?TH_HVY:TH_STD);
+  const tol=vlut(od);
+
+  // STOCK DIMS
+  const sOD=od+odAllow;
+  const sID=id-idAllow;
+  const sTHK=thk+thkAllow;
+
+  // WEIGHTS (OD²-ID²)*π/4*THK*density
+  const nomWt=(od*od-id*id)*0.7854*thk*density;
+  const stockWt=(sOD*sOD-sID*sID)*0.7854*sTHK*density;
+  const sf=stockWt<60?1.09:stockWt<100?1.05:1.03;
+  const reqWt=stockWt*sf;
+
+  // MANDREL
+  const wall=(od-id)/2;
+  const wallRatio=wall/thk;
+  let mand=6;
+  if(sID<6)mand=3;else if(sID<8.5||reqWt<=130)mand=4.25;else if(sID<10.5||reqWt<=300)mand=5.25;
+
+  // BLANK HEIGHT (RingData!E19)
+  const bh=rd(wallRatio>1.5?(sOD-mand)/10+sTHK:(sOD-mand)/15+sTHK,3);
+
+  // BLANK OD
+  const blankOD=Math.sqrt(stockWt/density/bh/0.7854+mand*mand);
+
+  // BAR DIAMETERS
+  const hMax=(sOD-mand)/20+sTHK+0.12;
+  const maxBarD=rd(Math.sqrt(reqWt/density/hMax/(0.25*Math.PI)),3);
+  const minBarD=rd(Math.pow(reqWt/(density*Math.PI*0.25*bh),1/3),3);
+  const barD=Math.min(maxBarD,15.054);
+
+  // BAR CUT LENGTH
+  const barCut=rd(reqWt/(density*0.7854*barD*barD),3);
+
+  // SAW KERF WEIGHT
+  const sawKWt=Math.PI*Math.pow(barD/2,2)*0.219*density;
+
+  // FILL FACTOR (approx)
+  const fillFactor=rd(blankOD*bh/(sOD*sTHK)*10,2);
+
+  // RING TYPE
+  const ringType=wallRatio>0.9?(wallRatio<1.1?'SQUARE':'WASHER'):'SLEEVE';
+
+  // MATERIAL COST
+  const dbP=stockType===1?mat.ingot:stockType===2?mat.bar:mat.billet;
+  set('dbPrice',dbP>0?'$'+dbP.toFixed(3)+'/lb':'Not in DB — enter override');
+  set('densityDisp',density);
+  const matP=matOvr>0?matOvr:dbP;
+  const matCost=(reqWt+sawKWt)*matP;
+
+  // SAW COST (π×d²/4 / sawRate × $29)
+  const sawTime=(Math.PI*barD*barD/4)/sawRate;
+  const sawCost=sawTime*29;
+
+  // ROLLING COST
+  const rollCost=qty<=4?56.70:44.10;
+  const rollHrs=qty<=4?0.09:0.07;
+
+  // HEAT TREAT
+  const htRate=HT_RATES[htCode]||0;
+  const htCost=needManualHT?htManual:stockWt*htRate;
+
+  // EXTRAS
+  const extraHCost=extraHeats*18.90;
+  const freightCost=FREIGHT[freightId]||0;
+
+  // TOTAL = SUM × 1.03
+  const subtotal=matCost+sawCost+rollCost+htCost+extraHCost+freightCost+addCosts;
+  const totalCost=subtotal*1.03;
+  const totalLbs=Math.ceil(qty*(reqWt+sawKWt));
+
+  // ─── UPDATE GEOMETRY ───
+  const tc=ringType.toLowerCase();
+  document.getElementById('ringTypeBadge').innerHTML=`<span class="ring-type-badge ${tc}">${ringType}</span>`;
+  set('ringTypeCell',ringType);
+  document.getElementById('dimTableBody').innerHTML=`
+    <tr><td>OD</td><td class="nominal">${fi(od)}</td><td class="stock">${fi(sOD)}</td><td>${tol}</td></tr>
+    <tr><td>ID</td><td class="nominal">${fi(id)}</td><td class="stock">${fi(sID)}</td><td>${tol}</td></tr>
+    <tr><td>THK</td><td class="nominal">${fi(thk)}</td><td class="stock">${fi(sTHK)}</td><td>${tol}</td></tr>
+    <tr><td>Wall</td><td class="nominal">${fi(wall)}</td><td class="stock">${fi((sOD-sID)/2)}</td><td>—</td></tr>
+    <tr><td colspan="4" style="font-size:.68rem;color:var(--text3)">
+      Allow: OD+${odAllow}" / ID−${idAllow}" / THK+${thkAllow}" (${heavy?'Heavy Wall ≥30%':'Standard &lt;30%'})
+    </td></tr>`;
+  set('nomWeight',fl(nomWt));set('stockWeightDisp',fl(stockWt));
+  set('scaleFactor',sf+'×');set('reqWeight',fl(reqWt));
+  set('sawKerfWeight',fl(sawKWt));set('thkodRatio',(thkOD*100).toFixed(1)+'%');
+  set('mandrelSize',fi(mand));set('blankHeight',fi(bh));set('blankOD',fi(blankOD));
+  set('minBarDia',fi(minBarD));set('maxBarDia',fi(maxBarD));set('barCutLen',fi(barCut));
+  set('wallThk',fi(wall));set('wallThkRatio',wallRatio.toFixed(3));
+  set('fillFactor',fillFactor.toFixed(2));set('totalReqLbs',totalLbs+' lbs');
+  set('rollingTime',(rollHrs*60).toFixed(0)+' min/pc');
+
+  // SVG ring
+  const maxR=90;const innerR=Math.max(6,(id/od)*maxR);
+  document.getElementById('svgOuter').setAttribute('r',maxR);
+  document.getElementById('svgInner').setAttribute('r',innerR);
+  document.getElementById('svgODLabel').textContent='OD: '+od+'"';
+  document.getElementById('svgIDLabel').textContent='ID: '+id+'"';
+
+  // ─── UPDATE COSTS ───
+  const costItems=[
+    {name:'Material Cost',amount:matCost,color:'#f59e0b'},
+    {name:'Saw / Cutting',amount:sawCost,color:'#8b5cf6'},
+    {name:'Rolling (Ring Mill)',amount:rollCost,color:'#3b82f6'},
+    {name:'Heat Treatment',amount:htCost,color:'#ef4444'},
+    {name:'Extra Heats',amount:extraHCost,color:'#f97316'},
+    {name:'Freight',amount:freightCost,color:'#10b981'},
+    {name:'Testing / NDT',amount:addCosts,color:'#06b6d4'},
+  ].filter(i=>i.amount>0);
+
+  const mx=Math.max(...costItems.map(i=>i.amount),1);
+  let cHtml='';
+  costItems.forEach(it=>{
+    const pct=(it.amount/totalCost*100).toFixed(1);
+    cHtml+=`<div class="cost-item">
+      <div class="cost-item-left">
+        <div class="cost-dot" style="background:${it.color}"></div>
+        <div><div class="cost-name">${it.name}</div>
+          <div class="cost-bar"><div class="cost-bar-fill" style="width:${it.amount/mx*100}%;background:${it.color}"></div></div>
+        </div>
+      </div>
+      <div style="text-align:right"><div class="cost-amount">${fd(it.amount)}</div>
+        <div style="font-size:.65rem;color:var(--text3)">${pct}%</div></div>
+    </div>`;
+  });
+  cHtml+=`<div class="cost-total-row"><span class="cost-total-label">Subtotal × 1.03 overhead</span><span class="cost-total-value">${fd(totalCost)}</span></div>`;
+  document.getElementById('costBreakdownList').innerHTML=cHtml;
+
+  // PIE CHART
+  const ctx=document.getElementById('costPieChart').getContext('2d');
+  if(pieChart)pieChart.destroy();
+  pieChart=new Chart(ctx,{type:'doughnut',data:{labels:costItems.map(i=>i.name),datasets:[{data:costItems.map(i=>i.amount),backgroundColor:costItems.map(i=>i.color),borderColor:'#111827',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: $${c.parsed.toFixed(2)} (${(c.parsed/c.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)`},backgroundColor:'#1a2233',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#e2e8f0',bodyColor:'#94a3b8',padding:10}},animation:{duration:600}}});
+
+  // ─── MARKUP TABLE ───
+  const half=Math.ceil(MARKUPS.length/2);
+  let mHtml='';
+  for(let i=0;i<half;i++){
+    const m1=MARKUPS[i];const m2=MARKUPS[i+half];
+    const p1=totalCost*m1;const gp1=rollHrs>0?(p1-totalCost)/rollHrs:0;const mg1=((p1-totalCost)/p1*100);
+    const hl1=Math.abs(m1-1.40)<0.001;
+    let r2='<td colspan="4" style="border-left:1px solid rgba(255,255,255,.05)"></td>';
+    let hl2=false;
+    if(m2){const p2=totalCost*m2;const gp2=rollHrs>0?(p2-totalCost)/rollHrs:0;const mg2=((p2-totalCost)/p2*100);hl2=Math.abs(m2-1.60)<0.001;
+      r2=`<td style="border-left:1px solid rgba(255,255,255,.05)">${m2.toFixed(2)}×</td><td class="price-col">${fd(p2)}</td><td class="gp-col">${fd(gp2)}/hr</td><td style="color:var(--text2)">${mg2.toFixed(1)}%</td>`;}
+    mHtml+=`<tr class="${(hl1||hl2)?'highlight-row':''}">
+      <td>${m1.toFixed(2)}×</td><td class="price-col">${fd(p1)}</td><td class="gp-col">${fd(gp1)}/hr</td><td style="color:var(--text2)">${mg1.toFixed(1)}%</td>${r2}</tr>`;
+  }
+  document.getElementById('markupTableBody').innerHTML=mHtml;
+
+  // ─── FLAGS ───
+  const flags=[];
+  const af=(type,title,desc)=>flags.push({type,title,desc});
+  if(thkOD>0.30)af('warn','Heavy Wall Ring',`THK/OD=${(thkOD*100).toFixed(1)}% — heavy allowances applied, review with Engineering`);
+  if(wallRatio>4)af('error','High Wall/THK Ratio',`Wall/THK=${wallRatio.toFixed(2)} > 4.0 — review with Engineering`);
+  if(fillFactor<11)af('warn','Low Fill Factor',`Fill factor=${fillFactor.toFixed(2)} < 11 — review rolling parameters`);
+  if(od>60)af('error','OD Exceeds Limit',`OD=${od}" > 60" — review with Engineering`);
+  if(id<10)af('warn','Small ID',`ID=${id}" < 10" — review with Engineering`);
+  if(thk<1.5)af('warn','Thin Ring',`THK=${thk}" < 1.5" — review with Engineering`);
+  if(thk>11.5)af('error','THK Exceeds Press Capacity',`THK=${thk}" > 11.5" — exceeds capacity`);
+  else if(thk>11)af('warn','Large THK',`THK=${thk}" > 11" — review with Engineering`);
+  if(nomWt>1000)af('error','Overweight',`Weight=${nomWt.toFixed(0)} lbs > 1,000 lbs`);
+  else if(nomWt>700)af('warn','Heavy Ring',`Weight=${nomWt.toFixed(0)} lbs > 700 lbs — review alloy/SS with Engineering`);
+  if(stockWt<60)af('info','Light Ring',`Stock wt=${stockWt.toFixed(1)} lbs < 60 lbs — scale 1.09× applied`);
+  if(blankOD>24)af('warn','Large Blank OD',`Blank OD=${blankOD.toFixed(2)}" > 24" — review with Engineering`);
+  if(barD>15.054)af('info','Large Bar Diameter',`Bar dia=${barD.toFixed(3)}" — review cut length`);
+  if(mand<4.25&&bh>=6)af('warn','Mandrel Size',`Mandrel ${mand}" with blank height ${bh}" ≥ 6" — review`);
+  if(stockType===1&&id<=10)af('warn','Ingot — Small Diameter',`Do not use ingot for small ID rings — select bar or billet`);
+  if(htCode>=7)af('info','Manual HT Cost Required',`HT code ${htCode} (17-4 PH) — get vendor cost`);
+  if(isDrill&&barD>8.25)af('warn','Drill Cost Review',`Drill dia ${barD.toFixed(2)}" > 8.25" — review drill cost separately`);
+  if(!matP||matP===0)af('error','No Material Price',`Material price is $0 — enter price override or check DB`);
+  if(flags.length===0)flags.push({type:'ok',title:'All Checks Passed',desc:'No engineering flags for these dimensions.'});
+
+  const fc=flags.filter(f=>f.type!=='ok').length;
+  set('kpiFlags',fc);
+  const icons={error:'🔴',warn:'⚠️',ok:'✅',info:'ℹ️'};
+  document.getElementById('flagsList').innerHTML=flags.map(f=>`
+    <div class="flag-card ${f.type}">
+      <span class="flag-icon">${icons[f.type]}</span>
+      <div><div class="flag-title">${f.title}</div><div class="flag-desc">${f.desc}</div></div>
+    </div>`).join('');
+
+  // ─── INQUIRY ───
+  set('inqRef',document.getElementById('quoteNum').value||'—');
+  set('inqCustomer',document.getElementById('customer').value||'—');
+  set('inqQty',qty+' pc'+(qty>1?'s':''));
+  set('inqMat',mpsCode+' — '+mat.name);
+  set('inqHT',HT_NAMES[htCode]||'—');
+  const bhnStr=minBHN>0&&maxBHN>0?`${minBHN}–${maxBHN} BHN`:minBHN>0?`Min ${minBHN} BHN`:maxBHN>0?`Max ${maxBHN} BHN`:'Not specified';
+  set('inqBHN',bhnStr);
+  set('inqStockOD',fi(sOD));set('inqStockID',fi(sID));set('inqStockTHK',fi(sTHK));
+  set('inqTol',tol);set('inqTol2',tol);set('inqTol3',tol);
+  set('inqNomOD',fi(od));set('inqNomID',fi(id));set('inqNomTHK',fi(thk));
+  set('inqUnmachWt',fl(stockWt));set('inqMachWt',fl(nomWt));
+
+  // ─── KPIs ───
+  set('kpiTotalCost',fd(totalCost));
+  set('kpiWeight',stockWt.toFixed(1)+' lbs');
+  const p14=totalCost*1.40;const gp14=rollHrs>0?(p14-totalCost)/rollHrs:0;
+  set('kpiPrice14',fd(p14));set('kpiGP14','$'+gp14.toFixed(0)+'/hr');
+}
+
+init();
+
+function printQuote() {
+  // Gather live values from the DOM
+  const quoteNum = document.getElementById('quoteNum').value || 'Quote';
+  const customer = document.getElementById('customer').value || '';
+  const itemNum  = document.getElementById('itemNum').value || '';
+  const now      = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // Populate header
+  document.getElementById('pp-quoteNum').textContent =
+    quoteNum + (itemNum ? ' — Item ' + itemNum : '');
+  document.getElementById('pp-customer').textContent = customer;
+  document.getElementById('pp-date').textContent     = now;
+  document.getElementById('pp-footer-date').textContent = 'Printed ' + now;
+
+  // Dimensions
+  const od  = parseFloat(document.getElementById('od').value)||0;
+  const id  = parseFloat(document.getElementById('id_in').value)||0;
+  const thk = parseFloat(document.getElementById('thk').value)||0;
+  const qty = parseInt(document.getElementById('qty').value)||1;
+  const mpsCode  = parseInt(document.getElementById('mpsCode').value);
+  const htCode   = parseInt(document.getElementById('htCode').value);
+  const stockType= parseInt(document.getElementById('stockType').value);
+  const matOvr   = parseFloat(document.getElementById('matPriceOverride').value)||0;
+  const addCosts = parseFloat(document.getElementById('additionalCosts').value)||0;
+  const extraHeats= parseInt(document.getElementById('extraHeats').value)||0;
+  const freightId= parseInt(document.getElementById('freightId').value);
+  const needManualHT = htCode >= 7;
+  const htManual = needManualHT ? (parseFloat(document.getElementById('htManualCost').value)||0) : 0;
+
+  document.getElementById('pp-od').textContent  = od  + '"';
+  document.getElementById('pp-id').textContent  = id  + '"';
+  document.getElementById('pp-thk').textContent = thk + '"';
+  document.getElementById('pp-qty').textContent = qty + ' pc' + (qty>1?'s':'');
+
+  const mat = getMat(mpsCode);
+  document.getElementById('pp-mat').textContent = mpsCode + ' — ' + mat.name;
+  document.getElementById('pp-ht').textContent  = HT_NAMES[htCode] || 'None';
+
+  if(!od || !id || !thk || od <= id) {
+    alert('Please enter valid ring dimensions before printing.');
+    return;
+  }
+
+  // Re-run calculations for print values
+  const density  = mat.density;
+  const sawRate  = mat.sawRate;
+  const thkOD   = thk/od;
+  const heavy   = thkOD >= 0.30;
+  const odAllow  = vlu(od, heavy?OD_HVY:OD_STD);
+  const idAllow  = vlu(od, heavy?ID_HVY:ID_STD);
+  const thkAllow = vlu(od, heavy?TH_HVY:TH_STD);
+  const sOD  = od + odAllow;
+  const sID  = id - idAllow;
+  const sTHK = thk + thkAllow;
+  const nomWt   = (od*od - id*id)*0.7854*thk*density;
+  const stockWt = (sOD*sOD - sID*sID)*0.7854*sTHK*density;
+  const sf      = stockWt<60?1.09:stockWt<100?1.05:1.03;
+  const reqWt   = stockWt*sf;
+  const wall    = (od-id)/2;
+  const wallRatio = wall/thk;
+  let mand=6;
+  if(sID<6)mand=3; else if(sID<8.5||reqWt<=130)mand=4.25; else if(sID<10.5||reqWt<=300)mand=5.25;
+  const bh = rd(wallRatio>1.5?(sOD-mand)/10+sTHK:(sOD-mand)/15+sTHK, 3);
+  const blankOD = Math.sqrt(stockWt/density/bh/0.7854+mand*mand);
+  const barD = Math.min(rd(Math.sqrt(reqWt/density/((sOD-mand)/20+sTHK+0.12)/(0.25*Math.PI)),3), 15.054);
+  const sawKWt  = Math.PI*Math.pow(barD/2,2)*0.219*density;
+  const fillFactor = rd(blankOD*bh/(sOD*sTHK)*10, 2);
+  const dbP = stockType===1?mat.ingot:stockType===2?mat.bar:mat.billet;
+  const matP = matOvr>0?matOvr:dbP;
+  const matCost = (reqWt+sawKWt)*matP;
+  const sawCost = (Math.PI*barD*barD/4)/sawRate*29;
+  const rollCost = qty<=4?56.70:44.10;
+  const rollHrs  = qty<=4?0.09:0.07;
+  const htRate   = HT_RATES[htCode]||0;
+  const htCost   = needManualHT?htManual:stockWt*htRate;
+  const extraHCost  = extraHeats*18.90;
+  const freightCost = FREIGHT[freightId]||0;
+  const subtotal = matCost+sawCost+rollCost+htCost+extraHCost+freightCost+addCosts;
+  const totalCost = subtotal*1.03;
+
+  document.getElementById('pp-cost').textContent = fd(totalCost);
+  document.getElementById('pp-wt').textContent   = stockWt.toFixed(1)+' lbs';
+
+  // Cost breakdown table
+  const costRows = [
+    {name:'Material Cost', amount:matCost},
+    {name:'Saw / Cutting', amount:sawCost},
+    {name:'Rolling (Ring Mill)', amount:rollCost},
+    {name:'Heat Treatment', amount:htCost},
+    {name:'Extra Heats', amount:extraHCost},
+    {name:'Freight', amount:freightCost},
+    {name:'Testing / NDT', amount:addCosts},
+  ].filter(r=>r.amount>0);
+  const sumBefore = costRows.reduce((a,r)=>a+r.amount, 0);
+  let cbHTML = costRows.map(r=>
+    `<tr><td>${r.name}</td><td class="r">${fd(r.amount)}</td><td class="r">${(r.amount/totalCost*100).toFixed(1)}%</td></tr>`
+  ).join('');
+  cbHTML += `<tr class="hl"><td><strong>Subtotal × 1.03 overhead</strong></td><td class="r"><strong>${fd(totalCost)}</strong></td><td class="r">100%</td></tr>`;
+  document.getElementById('pp-costBody').innerHTML = cbHTML;
+
+  // Markup table
+  const half = Math.ceil(MARKUPS.length/2);
+  let mHTML = '';
+  for(let i=0;i<half;i++){
+    const m1=MARKUPS[i]; const m2=MARKUPS[i+half];
+    const p1=totalCost*m1; const gp1=rollHrs>0?(p1-totalCost)/rollHrs:0; const mg1=((p1-totalCost)/p1*100);
+    const hl1=Math.abs(m1-1.40)<0.001;
+    let r2='<td colspan="4" style="border-left:2px solid #e2e8f0"></td>';
+    if(m2){
+      const p2=totalCost*m2; const gp2=rollHrs>0?(p2-totalCost)/rollHrs:0; const mg2=((p2-totalCost)/p2*100);
+      const hl2=Math.abs(m2-1.60)<0.001;
+      r2=`<td style="border-left:2px solid #e2e8f0${hl2?';font-weight:700;color:#d97706':''}">` +
+         `${m2.toFixed(2)}×</td><td class="r">${fd(p2)}</td><td class="r" style="color:#059669">${fd(gp2)}/hr</td><td class="r">${mg2.toFixed(1)}%</td>`;
+    }
+    mHTML += `<tr${(hl1)?" class='hl'":""}><td>${m1.toFixed(2)}×</td><td class="r">${fd(p1)}</td><td class="r" style="color:#059669">${fd(gp1)}/hr</td><td class="r">${mg1.toFixed(1)}%</td>${r2}</tr>`;
+  }
+  document.getElementById('pp-markupBody').innerHTML = mHTML;
+
+  // Engineering flags
+  const flags=[];
+  const af=(type,title,desc)=>flags.push({type,title,desc});
+  if(thkOD>0.30)af('warn','Heavy Wall Ring',`THK/OD=${(thkOD*100).toFixed(1)}% — heavy allowances applied`);
+  if(wallRatio>4)af('error','High Wall/THK Ratio',`Wall/THK=${wallRatio.toFixed(2)} > 4.0`);
+  if(fillFactor<11)af('warn','Low Fill Factor',`Fill factor=${fillFactor.toFixed(2)} < 11`);
+  if(od>60)af('error','OD Exceeds Limit',`OD=${od}" > 60"`);
+  if(id<10)af('warn','Small ID',`ID=${id}" < 10"`);
+  if(thk<1.5)af('warn','Thin Ring',`THK=${thk}" < 1.5"`);
+  if(thk>11.5)af('error','THK Exceeds Press Capacity',`THK=${thk}" > 11.5"`);
+  else if(thk>11)af('warn','Large THK',`THK=${thk}" > 11"`);
+  if(nomWt>1000)af('error','Overweight',`Weight=${nomWt.toFixed(0)} lbs > 1,000 lbs`);
+  else if(nomWt>700)af('warn','Heavy Ring',`Weight=${nomWt.toFixed(0)} lbs > 700 lbs`);
+  if(stockWt<60)af('info','Light Ring',`Stock wt=${stockWt.toFixed(1)} lbs < 60 lbs — scale 1.09× applied`);
+  if(!matP||matP===0)af('error','No Material Price','Material price is $0 — enter price override');
+  if(flags.length===0)flags.push({type:'ok',title:'All Checks Passed',desc:'No engineering flags for these dimensions.'});
+  const icons={error:'🔴',warn:'⚠️',ok:'✅',info:'ℹ️'};
+  document.getElementById('pp-flags').innerHTML = flags.map(f=>
+    `<div class="pp-flag ${f.type}"><strong>${icons[f.type]} ${f.title}</strong>${f.desc}</div>`
+  ).join('');
+
+  window.print();
+}
+</script>
+</body>
+</html>
