@@ -404,15 +404,20 @@
       <div class="result-card"><div class="result-card-header">Cost Breakdown / piece</div>
         <div class="result-card-body" id="costBreakdownList"><div style="color:var(--text3);text-align:center;padding:1rem">Calculate to see breakdown</div></div>
       </div>
-      <div class="result-card"><div class="result-card-header">Cost Distribution</div>
-        <div class="chart-wrap"><canvas id="costPieChart"></canvas></div>
-      </div>
-    </div>
-    <div class="result-card"><div class="result-card-header">Rate Reference</div><div class="result-card-body">
+      <div class="result-card"><div class="result-card-header">Rate Reference</div><div class="result-card-body">
       <div class="results-grid three">
         <div>
-          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Rolling Cost</div>
-          <table class="ref-table"><tr><th>Qty</th><th>$/pc</th><th>Hrs/pc</th></tr><tr><td>1–4 pcs</td><td>$56.70</td><td>0.09</td></tr><tr><td>5+ pcs</td><td>$44.10</td><td>0.07</td></tr></table>
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Rolling Cost ($/pc by stock weight)</div>
+          <table class="ref-table">
+            <tr><th>Stock Wt</th><th>1–4 pcs</th><th>5+ pcs</th></tr>
+            <tr><td>&lt;100 lbs</td><td>$50.40</td><td>$31.50</td></tr>
+            <tr><td>100–199</td><td>$56.70</td><td>$37.80</td></tr>
+            <tr><td>200–399</td><td>$56.70</td><td>$44.10</td></tr>
+            <tr><td>400–599</td><td>$56.70</td><td>$47.25</td></tr>
+            <tr><td>600–999</td><td>$75.60</td><td>$63.00</td></tr>
+            <tr><td>1000+</td><td>$94.50</td><td>$75.60</td></tr>
+          </table>
+          <div style="font-size:.6rem;color:var(--text3);margin-top:.35rem">Extra heats: $18.90 each</div>
         </div>
         <div>
           <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Heat Treatment</div>
@@ -424,20 +429,24 @@
             <tr><td>4</td><td>Anneal</td><td>$0.12</td></tr>
             <tr><td>5</td><td>Sph. Ann.</td><td>$0.08</td></tr>
             <tr><td>6</td><td>Sol. Ann.</td><td>$0.12</td></tr>
+            <tr><td>7–9</td><td>17-4 PH</td><td>Manual</td></tr>
           </table>
+          <div style="font-size:.6rem;color:var(--text3);margin-top:.35rem">Mill rate: $630/hr | Saw: $29/hr</div>
         </div>
         <div>
           <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);margin-bottom:.5rem">Freight</div>
           <table class="ref-table"><tr><th>Destination</th><th>Cost</th></tr>
-            <tr><td>None</td><td>$0</td></tr>
+            <tr><td>None / Pickup</td><td>$0</td></tr>
             <tr><td>Modern</td><td>$10</td></tr>
             <tr><td>EB&amp;A</td><td>$95</td></tr>
             <tr><td>VIP-Corry</td><td>$127</td></tr>
             <tr><td>VIP-Dupont</td><td>$190</td></tr>
           </table>
+          <div style="font-size:.6rem;color:var(--text3);margin-top:.35rem">Stamping: $10/pc | BHN test: $10/pc</div>
         </div>
       </div>
     </div></div>
+    </div>
   </div>
 
   <!-- MARKUP TAB -->
@@ -636,42 +645,101 @@
 </div>
 
 <script>
+// MPS Material Database — sourced from quoting-inspiration-only.xlsm (MPS Data sheet)
 const MPS_GRADES=[
   {code:0,name:'Unknown',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
-  {code:1010,name:'1010 Carbon (Ti addition)',billet:0,bar:0.89,ingot:0,density:0.283,sawRate:171,drillCode:2},
-  {code:1018,name:'1018 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
-  {code:1020,name:'1020 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
-  {code:1030,name:'1022 MOD',billet:0,bar:0.64,ingot:0.45,density:0.283,sawRate:171,drillCode:2},
-  {code:1060,name:'1060 High Carbon',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1065,name:'1552 (BQ Capable)',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:171,drillCode:1},
+  {code:1010,name:'1010 Carbon steel w/ Ti addition',billet:0,bar:0.89,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1018,name:'1018',billet:0,bar:0.64,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1030,name:'1020',billet:0,bar:0.64,ingot:0.45,density:0.283,sawRate:214,drillCode:2},
+  {code:1060,name:'1552  (BQ tested)',billet:0,bar:0.64,ingot:0.48,density:0.283,sawRate:171,drillCode:1},
+  {code:1065,name:'1552  (BQ capable)',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:171,drillCode:1},
   {code:1080,name:'1029',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
   {code:1083,name:'X-60',billet:0,bar:0,ingot:0.5,density:0.283,sawRate:214,drillCode:2},
   {code:1084,name:'1518 MOD',billet:0,bar:0,ingot:0.48,density:0.283,sawRate:214,drillCode:2},
-  {code:1085,name:'A694 Grade F65',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1085,name:'Carbon steel  (A 694 Grade F65)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
   {code:1120,name:'1522 MOD',billet:0,bar:0.64,ingot:0.45,density:0.283,sawRate:214,drillCode:2},
-  {code:1125,name:'1526 (HiC)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1135,name:'1541 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1140,name:'1141 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1155,name:'1155 Carbon Steel',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1249,name:'1249 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1250,name:'4130 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1251,name:'4140 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1255,name:'4142 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1261,name:'4145 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1271,name:'4150 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1315,name:'4340 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1321,name:'8620 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1322,name:'8622 Alloy',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:1501,name:'A182 F51 (2205 Duplex SS)',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:3},
-  {code:1505,name:'304/304L Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:214,drillCode:3},
-  {code:1508,name:'316/316L Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:214,drillCode:3},
-  {code:1509,name:'321 Stainless',billet:0,bar:0,ingot:0,density:0.285,sawRate:214,drillCode:3},
-  {code:1520,name:'347 Stainless',billet:0,bar:0,ingot:0,density:0.285,sawRate:214,drillCode:3},
-  {code:1606,name:'410 Stainless',billet:0,bar:0,ingot:0,density:0.276,sawRate:214,drillCode:3},
-  {code:1608,name:'17-4 PH Stainless',billet:0,bar:0,ingot:0,density:0.28,sawRate:214,drillCode:3},
-  {code:1700,name:'A182 F22 (2.25Cr-1Mo)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
-  {code:1800,name:'A182 F91 (Mod 9Cr-1Mo)',billet:0,bar:0,ingot:0,density:0.284,sawRate:214,drillCode:2},
-  {code:2700,name:'M-50 NiL',billet:0,bar:0,ingot:0,density:0.284,sawRate:150,drillCode:3},
+  {code:1125,name:'Carbon steel  (A 350 Grade LF6)',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1135,name:'1030',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:2},
+  {code:1140,name:'1035',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:214,drillCode:2},
+  {code:1155,name:'1040 / 1045',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:214,drillCode:1},
+  {code:1160,name:'1045',billet:0,bar:0.64,ingot:0,density:0.283,sawRate:214,drillCode:1},
+  {code:1165,name:'1045 / 1050',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:214,drillCode:1},
+  {code:1170,name:'1050',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:1},
+  {code:1171,name:'1050 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:214,drillCode:1},
+  {code:1190,name:'1070',billet:0,bar:0,ingot:0.45,density:0.283,sawRate:171,drillCode:1},
+  {code:1230,name:'1095 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:1},
+  {code:1249,name:'EN355 (Timken)',billet:0,bar:0.99,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1250,name:'3311  (Timken)',billet:0,bar:1.08,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1251,name:'3310  (Bearing quality)',billet:0,bar:1.08,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1255,name:'3311',billet:0,bar:1.08,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1261,name:'4130',billet:0,bar:0.72,ingot:0.52,density:0.283,sawRate:171,drillCode:1},
+  {code:1271,name:'4140',billet:0,bar:0.72,ingot:0.52,density:0.283,sawRate:171,drillCode:1},
+  {code:1315,name:'4145H / 4150  (BQ capable)',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1321,name:'4150 / 4150H  (BQ tested)',billet:0,bar:0.72,ingot:0.55,density:0.283,sawRate:171,drillCode:1},
+  {code:1322,name:'4150 / 4150H  (BQ capable)',billet:0,bar:0,ingot:0.52,density:0.283,sawRate:171,drillCode:1},
+  {code:1323,name:'4150 (Generic)',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1326,name:'4170',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:1},
+  {code:1330,name:'ASTM A 182 Grade F1',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1350,name:'ASTM A 182 Grade F9',billet:0,bar:1.5,ingot:1.09,density:0.283,sawRate:171,drillCode:2},
+  {code:1360,name:'ASTM A 182 Grade F11',billet:0,bar:0,ingot:0.6,density:0.283,sawRate:171,drillCode:2},
+  {code:1380,name:'ASTM A 182 Grade F22',billet:0,bar:0,ingot:0.7,density:0.283,sawRate:171,drillCode:2},
+  {code:1477,name:'ASTM A 508 Grade 2',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1501,name:'4319  (Timken)',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1505,name:'4319  (Timken)',billet:0,bar:0.9,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1508,name:'4320  (Bearing quality)',billet:0,bar:0.9,ingot:0.7,density:0.283,sawRate:171,drillCode:2},
+  {code:1509,name:'4319 VIM-VAR',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1520,name:'4330 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1549,name:'D6AC',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1560,name:'4340',billet:0,bar:0,ingot:0.7,density:0.283,sawRate:171,drillCode:1},
+  {code:1561,name:'4340',billet:0,bar:0.9,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1571,name:'4340 VAR',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1606,name:'NiCrMoV',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1608,name:'4620',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1610,name:'4820H',billet:0,bar:1.18,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1615,name:'ASKO 26',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1620,name:'52100 Grade 1  (ASTM A 485)',billet:0,bar:0.82,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1625,name:'52100 Grade 2  (ASTM A 485)',billet:0,bar:0.83,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1630,name:'52100 Grade 1  (Timken)',billet:0,bar:0.82,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1640,name:'52100 Grade 2  (Timken)',billet:0.94,bar:0.83,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1645,name:'52100  (ASTM A 295)',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1655,name:'52100  VAR',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1681,name:'8620',billet:0,bar:0.75,ingot:0.54,density:0.283,sawRate:171,drillCode:2},
+  {code:1682,name:'8620H',billet:0,bar:0.75,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1684,name:'8630 MOD',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1685,name:'8630',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1687,name:'8660',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1688,name:'8740',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:1},
+  {code:1689,name:'8822H',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1691,name:'9310',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1700,name:'HY-80 / HY-100',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1730,name:'Nitralloy N',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2},
+  {code:1775,name:'304 / 304L Stainless',billet:2.1,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1777,name:'304HN Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1780,name:'304 Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1794,name:'304N Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1800,name:'316 / 316L Stainless',billet:2.51,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1810,name:'316 Stainless ESR',billet:0,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1840,name:'317 Stainless',billet:0,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1860,name:'321 Stainless',billet:2.44,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1880,name:'347 Stainless',billet:2.55,bar:0,ingot:0,density:0.29,sawRate:150,drillCode:3},
+  {code:1915,name:'403 Stainless',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1917,name:'405 Stainless',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1921,name:'410 Stainless',billet:1.67,bar:0,ingot:0.86,density:0.283,sawRate:150,drillCode:3},
+  {code:1950,name:'416 Stainless',billet:1.94,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1960,name:'420 Stainless',billet:1.9,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1961,name:'420 MOD Stainless',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1970,name:'422 Stainless',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:1995,name:'440C Stainless',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2080,name:'Inconel 600',billet:0,bar:0,ingot:0,density:0.307,sawRate:150,drillCode:3},
+  {code:2180,name:'17-4 PH Stainless',billet:2.2,bar:2.5,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2220,name:'Duplex Stainless (A 182 F51/F60)',billet:3.0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2250,name:'Greek Ascaloy',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2280,name:'H-13',billet:0,bar:2.15,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2337,name:'Nitronic 60',billet:0,bar:0,ingot:0,density:0.275,sawRate:150,drillCode:3},
+  {code:2380,name:'Uniloy 888',billet:0,bar:0,ingot:0,density:0.285,sawRate:150,drillCode:3},
+  {code:2451,name:'EC 255 (Ferralium 255)',billet:0,bar:0,ingot:0,density:0.283,sawRate:150,drillCode:3},
+  {code:2700,name:'M-50 VIM-VAR',billet:0,bar:0,ingot:0,density:0.288,sawRate:150,drillCode:3},
+  {code:2710,name:'M-50 NiL',billet:0,bar:0,ingot:0,density:0.284,sawRate:150,drillCode:3},
   {code:5570,name:'A-286 (AMS 5731)',billet:0,bar:0,ingot:0,density:0.286,sawRate:150,drillCode:3},
   {code:9999,name:'Other / Specify',billet:0,bar:0,ingot:0,density:0.283,sawRate:171,drillCode:2}
 ];
@@ -705,7 +773,7 @@ function init(){
   MPS_GRADES.forEach(m=>{
     const o=document.createElement('option');
     o.value=m.code;o.textContent=m.code+' — '+m.name;
-    if(m.code===1020)o.selected=true;
+    if(m.code===1030)o.selected=true;
     sel.appendChild(o);
   });
   const tbody=document.getElementById('materialRefBody');
@@ -849,13 +917,23 @@ function calculate(isManualClick = false){
   const matP=matOvr>0?matOvr:dbP;
   const matCost=(reqWt+sawKWt)*matP;
 
-  // SAW COST (π×d²/4 / sawRate × $29)
+  // SAW COST (π×d²/4 / sawRate × $29/hr)
   const sawTime=(Math.PI*barD*barD/4)/sawRate;
   const sawCost=sawTime*29;
 
-  // ROLLING COST
-  const rollCost=qty<=4?56.70:44.10;
-  const rollHrs=qty<=4?0.09:0.07;
+  // ROLLING COST — weight-based tiers (from Cost Data sheet)
+  // Qty 1-4: 0-99 lbs=$50.40, 100-199=$56.70, 200-399=$56.70, 400-599=$56.70, 600-999=$75.60, 1000+=$94.50
+  // Qty 5+:  0-99 lbs=$31.50, 100-199=$37.80, 200-399=$44.10, 400-599=$47.25, 600-999=$63.00, 1000+=$75.60
+  function getRollRate(wt, q) {
+    const tiers = q<=4
+      ? [{lim:100,c:50.40,h:0.08},{lim:200,c:56.70,h:0.09},{lim:400,c:56.70,h:0.09},{lim:600,c:56.70,h:0.09},{lim:1000,c:75.60,h:0.12},{lim:Infinity,c:94.50,h:0.15}]
+      : [{lim:100,c:31.50,h:0.05},{lim:200,c:37.80,h:0.06},{lim:400,c:44.10,h:0.07},{lim:600,c:47.25,h:0.075},{lim:1000,c:63.00,h:0.10},{lim:Infinity,c:75.60,h:0.12}];
+    for(const t of tiers) if(wt<t.lim) return t;
+    return tiers[tiers.length-1];
+  }
+  const rollTier = getRollRate(stockWt, qty);
+  const rollCost = rollTier.c;
+  const rollHrs  = rollTier.h;
 
   // HEAT TREAT
   const htRate=HT_RATES[htCode]||0;
